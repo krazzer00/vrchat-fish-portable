@@ -3,6 +3,20 @@ chcp 65001 >nul 2>&1
 title VRC Auto Fish - Install
 cd /d "%~dp0"
 
+:: ============================================
+::  Self-elevate to Administrator if needed
+::  (Python installer requires admin rights
+::   to install to a custom TargetDir)
+:: ============================================
+net session >nul 2>&1
+if %errorlevel% neq 0 (
+    echo [INFO] Requesting administrator privileges...
+    echo        (required for Python installer)
+    echo.
+    powershell -Command "Start-Process -FilePath '%~f0' -Verb RunAs -WorkingDirectory '%~dp0'"
+    exit /b
+)
+
 echo ============================================
 echo   VRC Auto Fish - Portable Installer
 echo ============================================
@@ -12,14 +26,14 @@ set PYTHON_DIR=%~dp0python
 set PYTHON_EXE=%PYTHON_DIR%\python.exe
 set PYTHON_VER=3.10.11
 set PYTHON_URL=https://www.python.org/ftp/python/%PYTHON_VER%/python-%PYTHON_VER%-amd64.exe
-set INSTALLER_EXE=python-installer.exe
+set INSTALLER_EXE=%~dp0python-installer.exe
 
 :: ============================================
 ::  Step 1: Get Python
 :: ============================================
 if exist "%PYTHON_EXE%" (
     echo [OK] Local Python found: %PYTHON_DIR%
-    goto :fix_pth
+    goto :install_deps
 )
 
 echo [1/3] Downloading Python %PYTHON_VER%...
@@ -52,48 +66,37 @@ echo   Installing Python to %PYTHON_DIR% ...
     Include_doc=0 ^
     AssociateFiles=0
 
+del "%INSTALLER_EXE%" >nul 2>&1
+
 if not exist "%PYTHON_EXE%" (
+    echo.
     echo [ERROR] Python installation failed!
-    del "%INSTALLER_EXE%" >nul 2>&1
+    echo.
+    echo   Possible reasons:
+    echo     - Antivirus blocked the installer
+    echo     - Insufficient disk space
+    echo     - Path too long (try moving the folder closer to drive root)
+    echo.
+    echo   Try running install.bat again, or move the project to a shorter path
+    echo   e.g. D:\vrc-fish\ instead of D:\vrchat-fish-portable-main\
+    echo.
     pause
     exit /b 1
 )
 
-del "%INSTALLER_EXE%" >nul 2>&1
 echo [OK] Python %PYTHON_VER% installed to python\
 echo.
 
 :: ============================================
-::  Step 2: Fix ._pth if embedded Python
-::  (embedded Python ships with python310._pth
-::   that blocks site-packages by default)
+::  Step 2: Install pip + dependencies
 :: ============================================
-:fix_pth
-if exist "%PYTHON_DIR%\python310.zip" (
-    echo [2/3] Embedded Python detected - enabling site-packages...
-    (
-        echo python310.zip
-        echo .
-        echo import site
-    ) > "%PYTHON_DIR%\python310._pth"
-    echo [OK] site-packages enabled
-) else (
-    echo [2/3] Full Python detected - no path fix needed
-)
-echo.
-
-:: ============================================
-::  Step 3: Install pip + dependencies
-:: ============================================
-echo [3/3] Installing dependencies...
-echo.
-
-:: Upgrade pip
-echo   Upgrading pip...
+:install_deps
+echo [2/3] Upgrading pip...
 "%PYTHON_EXE%" -m pip install --upgrade pip --quiet --no-warn-script-location
 echo.
 
 :: PyTorch: auto-detect GPU
+echo [3/3] Detecting GPU...
 nvidia-smi >nul 2>&1
 if errorlevel 1 (
     echo   No NVIDIA GPU detected - installing CPU PyTorch
@@ -113,8 +116,8 @@ if errorlevel 1 (
 )
 
 echo.
-echo   Installing remaining packages (ultralytics + dependencies)...
-"%PYTHON_EXE%" -m pip install -r requirements.txt --no-warn-script-location
+echo   Installing remaining packages...
+"%PYTHON_EXE%" -m pip install -r "%~dp0requirements.txt" --no-warn-script-location
 if errorlevel 1 (
     echo [ERROR] Dependency installation failed!
     pause
