@@ -3,32 +3,6 @@ chcp 65001 >nul 2>&1
 title VRC Auto Fish - Install
 cd /d "%~dp0"
 
-:: ============================================
-::  Self-elevate to Administrator if needed
-::  (Python installer requires admin rights
-::   to install to a custom TargetDir)
-::
-::  Pass --elevated flag to avoid infinite loop:
-::  net session can fail even as admin when the
-::  Server service is disabled.
-:: ============================================
-if "%1"=="--elevated" goto :main
-
-powershell -NoProfile -Command ^
-    "([Security.Principal.WindowsPrincipal]" ^
-    "[Security.Principal.WindowsIdentity]::GetCurrent())" ^
-    ".IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)" ^
-    | findstr /i "True" >nul 2>&1
-if %errorlevel% == 0 goto :main
-
-echo [INFO] Requesting administrator privileges...
-echo        (required for Python installer)
-echo.
-powershell -Command "Start-Process -FilePath '%~f0' -ArgumentList '--elevated' -Verb RunAs -WorkingDirectory '%~dp0'"
-exit /b
-
-:main
-
 echo ============================================
 echo   VRC Auto Fish - Portable Installer
 echo ============================================
@@ -68,33 +42,51 @@ if not exist "%INSTALLER_EXE%" (
 
 echo.
 echo   Installing Python to %PYTHON_DIR% ...
-"%INSTALLER_EXE%" /quiet ^
-    TargetDir="%PYTHON_DIR%" ^
-    InstallAllUsers=0 ^
-    PrependPath=0 ^
-    Shortcuts=0 ^
-    Include_launcher=0 ^
-    Include_test=0 ^
-    Include_doc=0 ^
-    AssociateFiles=0
+
+:: Pre-create target dir — installer requires it to exist on some systems
+mkdir "%PYTHON_DIR%" >nul 2>&1
+
+:: TargetDir must be quoted as "TargetDir=path" (not TargetDir="path")
+:: All args on one line — ^ continuation can corrupt arguments
+:: /passive = progress bar, no user input, installer handles UAC itself
+"%INSTALLER_EXE%" /passive /log "%~dp0python-install.log" "TargetDir=%PYTHON_DIR%" InstallAllUsers=0 PrependPath=0 Shortcuts=0 Include_launcher=0 Include_test=0 Include_doc=0 AssociateFiles=0
 
 del "%INSTALLER_EXE%" >nul 2>&1
+
+:: --------------------------------------------------------
+:: Fallback: if same Python version is already installed,
+:: the installer enters Modify mode and ignores TargetDir.
+:: In that case, copy from the existing installation.
+:: --------------------------------------------------------
+if not exist "%PYTHON_EXE%" (
+    echo   Installer did not create local copy, looking for existing Python 3.10...
+    set "FOUND_PYTHON="
+    if exist "%LOCALAPPDATA%\Programs\Python\Python310\python.exe" set "FOUND_PYTHON=%LOCALAPPDATA%\Programs\Python\Python310"
+    if exist "%ProgramFiles%\Python310\python.exe" set "FOUND_PYTHON=%ProgramFiles%\Python310"
+)
+if not exist "%PYTHON_EXE%" if defined FOUND_PYTHON (
+    echo   Found at %FOUND_PYTHON% - copying to project...
+    xcopy "%FOUND_PYTHON%" "%PYTHON_DIR%\" /E /I /Q /Y >nul
+)
 
 if not exist "%PYTHON_EXE%" (
     echo.
     echo [ERROR] Python installation failed!
     echo.
-    echo   Possible reasons:
-    echo     - Antivirus blocked the installer
-    echo     - Insufficient disk space
-    echo     - Path too long (try moving the folder closer to drive root)
+    echo   Install log saved to: %~dp0python-install.log
+    echo   Open it to see the exact error from the installer.
     echo.
-    echo   Try running install.bat again, or move the project to a shorter path
-    echo   e.g. D:\vrc-fish\ instead of D:\vrchat-fish-portable-main\
+    echo   Common fixes:
+    echo     - Temporarily disable antivirus and run install.bat again
+    echo     - Make sure you have at least 500 MB free on this drive
+    echo     - Move the folder closer to drive root, e.g.:
+    echo         D:\vrc-fish\  instead of  C:\Users\...\Desktop\...
     echo.
     pause
     exit /b 1
 )
+
+del "%~dp0python-install.log" >nul 2>&1
 
 echo [OK] Python %PYTHON_VER% installed to python\
 echo.
