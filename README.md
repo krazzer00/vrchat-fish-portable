@@ -51,6 +51,11 @@ start.bat
 > Устанавливать CUDA Toolkit **не нужно** — PyTorch включает все CUDA-библиотеки в pip-пакете.
 > Единственное требование для GPU-режима — **драйверы NVIDIA версии 570+** (обычно уже установлены).
 > Проверить версию: `nvidia-smi` в командной строке.
+>
+> Если `install.bat` определил GPU неверно и поставил CPU-версию PyTorch — переустановить вручную:
+> ```
+> python\python.exe -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128 --force-reinstall
+> ```
 
 ---
 
@@ -196,6 +201,11 @@ start.bat
 > You do **NOT** need to install CUDA Toolkit — PyTorch bundles all CUDA libraries in the pip package.
 > The only requirement for GPU mode is **NVIDIA driver version 570+** (usually already installed).
 > Check your version: run `nvidia-smi` in the command prompt.
+>
+> If `install.bat` installed the CPU version of PyTorch by mistake — reinstall manually:
+> ```
+> python\python.exe -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128 --force-reinstall
+> ```
 
 ---
 
