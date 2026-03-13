@@ -7,15 +7,27 @@ cd /d "%~dp0"
 ::  Self-elevate to Administrator if needed
 ::  (Python installer requires admin rights
 ::   to install to a custom TargetDir)
+::
+::  Pass --elevated flag to avoid infinite loop:
+::  net session can fail even as admin when the
+::  Server service is disabled.
 :: ============================================
-net session >nul 2>&1
-if %errorlevel% neq 0 (
-    echo [INFO] Requesting administrator privileges...
-    echo        (required for Python installer)
-    echo.
-    powershell -Command "Start-Process -FilePath '%~f0' -Verb RunAs -WorkingDirectory '%~dp0'"
-    exit /b
-)
+if "%1"=="--elevated" goto :main
+
+powershell -NoProfile -Command ^
+    "([Security.Principal.WindowsPrincipal]" ^
+    "[Security.Principal.WindowsIdentity]::GetCurrent())" ^
+    ".IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)" ^
+    | findstr /i "True" >nul 2>&1
+if %errorlevel% == 0 goto :main
+
+echo [INFO] Requesting administrator privileges...
+echo        (required for Python installer)
+echo.
+powershell -Command "Start-Process -FilePath '%~f0' -ArgumentList '--elevated' -Verb RunAs -WorkingDirectory '%~dp0'"
+exit /b
+
+:main
 
 echo ============================================
 echo   VRC Auto Fish - Portable Installer
