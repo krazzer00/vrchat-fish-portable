@@ -1,0 +1,56 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+*.egg
+
+# Local portable Python + virtual environment
+python/
+.venv/
+venv/
+
+# PyInstaller
+build/
+dist/
+*.spec
+
+# Debug output
+debug/
+
+# Imitation learning data (personal recordings)
+imitation/data/
+imitation/policy.pt
+
+# YOLO training dataset (too large for git)
+yolo/dataset/images/
+yolo/dataset/labels/
+
+# YOLO intermediate weights (keep only best.pt)
+yolo/runs/fish_detect/weights/epoch*.pt
+yolo/runs/fish_detect/weights/last.pt
+
+# Pre-trained base models (downloaded by user)
+yolo26n.pt
+yolov8n.pt
+
+# Large files
+*.whl
+patch_*.zip
+
+# IDE
+.vscode/
+.idea/
+.cursor/
+
+# System
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# User settings (personal per machine)
+settings.json
+
+# Logs
+*.log
