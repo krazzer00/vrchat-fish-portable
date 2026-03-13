@@ -46,7 +46,11 @@ start.bat
 - Интернет при первом запуске install.bat (~500 МБ с CUDA PyTorch)
 - VRChat с открытой игрой [fish!](https://vrchat.com/home/world/wrld_5d5a3e81-069d-4f5d-a962-e8c7bdcf4fbe)
 
-> GPU (NVIDIA) ускоряет детекцию, но не обязателен — работает и на CPU.
+> **GPU (NVIDIA)** ускоряет детекцию в ~3-5 раз, но не обязателен — работает и на CPU.
+>
+> Устанавливать CUDA Toolkit **не нужно** — PyTorch включает все CUDA-библиотеки в pip-пакете.
+> Единственное требование для GPU-режима — **драйверы NVIDIA версии 570+** (обычно уже установлены).
+> Проверить версию: `nvidia-smi` в командной строке.
 
 ---
 
@@ -187,7 +191,11 @@ start.bat
 - Internet on first `install.bat` run (~500 MB with CUDA PyTorch)
 - VRChat with the [fish!](https://vrchat.com/home/world/wrld_5d5a3e81-069d-4f5d-a962-e8c7bdcf4fbe) world open
 
-> An NVIDIA GPU speeds up detection but is not required — CPU mode works fine.
+> **NVIDIA GPU** speeds up detection ~3-5x, but is not required — CPU mode works fine.
+>
+> You do **NOT** need to install CUDA Toolkit — PyTorch bundles all CUDA libraries in the pip package.
+> The only requirement for GPU mode is **NVIDIA driver version 570+** (usually already installed).
+> Check your version: run `nvidia-smi` in the command prompt.
 
 ---
 

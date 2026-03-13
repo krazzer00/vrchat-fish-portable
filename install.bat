@@ -99,10 +99,18 @@ echo [2/3] Upgrading pip...
 "%PYTHON_EXE%" -m pip install --upgrade pip --quiet --no-warn-script-location
 echo.
 
-:: PyTorch: auto-detect GPU
+:: PyTorch: auto-detect NVIDIA GPU
 echo [3/3] Detecting GPU...
-nvidia-smi >nul 2>&1
-if errorlevel 1 (
+set "HAS_NVIDIA=0"
+nvidia-smi >nul 2>&1 && set "HAS_NVIDIA=1"
+if "%HAS_NVIDIA%"=="0" (
+    "%SystemRoot%\System32\nvidia-smi.exe" >nul 2>&1 && set "HAS_NVIDIA=1"
+)
+if "%HAS_NVIDIA%"=="0" (
+    wmic path win32_videocontroller get name 2>nul | findstr /i "NVIDIA" >nul && set "HAS_NVIDIA=1"
+)
+
+if "%HAS_NVIDIA%"=="0" (
     echo   No NVIDIA GPU detected - installing CPU PyTorch
     "%PYTHON_EXE%" -m pip install torch torchvision ^
         --index-url https://download.pytorch.org/whl/cpu ^
